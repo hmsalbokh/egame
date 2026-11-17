@@ -264,6 +264,10 @@
     window.ACTIVE_STAGE_NAME=active.name;
     // override with stage-specific data (if file exists)
     document.write('<script src="'+active.file+'"><\/script>');
+    // bridge: stage files define window.STAGE_DATA[slug]; expose as GAME_DATA so games consume stage words
+    if(window.STAGE_DATA && window.STAGE_DATA[active.id]){
+      window.GAME_DATA = window.STAGE_DATA[active.id];
+    }
   }
 })();
 </script>

@@ -136,6 +136,8 @@
 <script src="stages.js" onerror="window.STAGES=null;"></script>
 <script>
 (function(){
+  // base data (fallback) so a missing stage file doesn't leave us with no words
+  document.write('<script src="game-data.js"><\/script>');
   var slug=null; try{ slug=localStorage.getItem('efun_stage'); }catch(e){}
   var stages=window.STAGES;
   if(stages && stages.length){
@@ -145,8 +147,10 @@
     window.ACTIVE_STAGE_ID=active.id;
     window.ACTIVE_STAGE_NAME=active.name;
     document.write('<script src="'+active.file+'"><\/script>');
-  } else {
-    document.write('<script src="game-data.js"><\/script>');
+    // bridge: stage files define window.STAGE_DATA[slug]; expose as GAME_DATA so challenges use stage words
+    if(window.STAGE_DATA && window.STAGE_DATA[active.id]){
+      window.GAME_DATA = window.STAGE_DATA[active.id];
+    }
   }
 })();
 </script>
@@ -516,13 +520,13 @@ class MenuScene extends Phaser.Scene {
 
 // global helpers for menu overlay
 window.selectChar = function(id){ const p=loadProgress(); p.selectedChar=id; saveProgress(p); const s=window.game && window.game.scene && window.game.scene.getScene('MenuScene'); if(s) s.showMenuOverlay(); };
-window.selectStageP = function(id){ try{ localStorage.setItem('efun_stage', id); }catch(e){} const s=window.game && window.game.scene && window.game.scene.getScene('MenuScene'); if(s) s.showMenuOverlay(); };
+window.selectStageP = function(id){ try{ localStorage.setItem('efun_stage', id); }catch(e){} location.reload(); };
 window.startLevel = function(stageId, level){ const s=window.game && window.game.scene && window.game.scene.getScene('MenuScene'); if(s){ s.hideMenuOverlay(); window.game.scene.stop('MenuScene'); window.game.scene.start('GameScene', {stageId:stageId, level:level}); } };
 window.resetProgressP = function(){ if(confirm('هل أنت متأكد؟ سيتم حذف جميع النقاط والشارات والمستويات.')){ localStorage.removeItem('efun_platformer'); location.reload(); } };
 
 class GameScene extends Phaser.Scene {
   constructor(){ super('GameScene'); }
-  init(data){ this.grade=data.grade||7; this.levelNum=data.level||1; this.charId = (loadProgress().selectedChar) || 'hero'; }
+  init(data){ this.grade=data.grade||7; this.levelNum=data.level||1; this.stageId=data.stageId||window.ACTIVE_STAGE_ID||null; this.charId = (loadProgress().selectedChar) || 'hero'; }
   create(){
     const w=this.scale.width, h=this.scale.height;
     const lvl = window.PLATFORMER_DATA.levels[this.levelNum] || window.PLATFORMER_DATA.levels[1];
