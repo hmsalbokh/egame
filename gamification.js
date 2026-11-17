@@ -284,7 +284,8 @@
 
   // ===== Leaderboard widget (from GAME_DATA.leaderboard) =====
   function renderLeaderboard(container){
-    const data = (window.GAME_DATA && Array.isArray(window.GAME_DATA.leaderboard)) ? window.GAME_DATA.leaderboard : [];
+    const _sd = (window.STAGE_DATA && window.ACTIVE_STAGE_ID && window.STAGE_DATA[window.ACTIVE_STAGE_ID]);
+    const data = (_sd && Array.isArray(_sd.leaderboard)) ? _sd.leaderboard : ((window.GAME_DATA && Array.isArray(window.GAME_DATA.leaderboard)) ? window.GAME_DATA.leaderboard : []);
     if(!data.length) return;
     const w = document.createElement('div'); w.className='lb-widget';
     w.innerHTML = '<h3>🏆 لوحة أبطال الأسبوع</h3>' + data.slice(0,10).map((r,i)=>

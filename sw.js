@@ -1,4 +1,4 @@
-const CACHE = 'efun-v2';
+const CACHE = 'efun-v3';
 const ASSETS = [
   './index.html',
   './landing.html',
@@ -8,6 +8,9 @@ const ASSETS = [
   './gamification.js',
   './speech-helper.js',
   './game-data.js',
+  './game-data-s2.js',
+  './game-data-s4.js',
+  './game-data-s6.js',
   './stages.js',
   './manifest.json',
   './phaser.min.js'

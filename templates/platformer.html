@@ -717,7 +717,8 @@ class GameScene extends Phaser.Scene {
     if(window.SoundFX) SoundFX.checkpoint();
     this.player.setVelocity(0,0);
     this.physics.pause();
-    const stageData = (window.GAME_DATA) || (window.PLATFORMER_DATA && window.PLATFORMER_DATA.grades && window.PLATFORMER_DATA.grades[this.grade]) || {};
+    const _sd = (window.STAGE_DATA && window.ACTIVE_STAGE_ID && window.STAGE_DATA[window.ACTIVE_STAGE_ID]);
+    const stageData = _sd || (window.GAME_DATA) || (window.PLATFORMER_DATA && window.PLATFORMER_DATA.grades && window.PLATFORMER_DATA.grades[this.grade]) || {};
     const vocab = stageData.vocab || ((window.PLATFORMER_DATA.grades||{})[this.grade]||{}).vocab || [];
     const item = vocab[Math.floor(Math.random()*vocab.length)];
     const distractors = shuffle(vocab.filter(v=>v.en!==item.en)).slice(0,3);
@@ -759,7 +760,8 @@ class GameScene extends Phaser.Scene {
     setTimeout(()=>{ try{ banner.destroy(); }catch(e){} this.startBossFight(); }, 1100);
   }
   startBossFight(){
-    const stageData = (window.GAME_DATA) || (window.PLATFORMER_DATA && window.PLATFORMER_DATA.grades && window.PLATFORMER_DATA.grades[this.grade]) || {};
+    const _sd2 = (window.STAGE_DATA && window.ACTIVE_STAGE_ID && window.STAGE_DATA[window.ACTIVE_STAGE_ID]);
+    const stageData = _sd2 || (window.GAME_DATA) || (window.PLATFORMER_DATA && window.PLATFORMER_DATA.grades && window.PLATFORMER_DATA.grades[this.grade]) || {};
     const qs = (stageData.quiz || stageData.grammar || ((window.PLATFORMER_DATA.grades||{})[this.grade]||{}).grammar || []).slice();
     const questions = [];
     for(let i=0;i<3;i++){

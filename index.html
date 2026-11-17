@@ -408,11 +408,13 @@ let QUIZ = [
 ];
 
 
-// ============ Apply admin game-data (if present) ============
-if(window.GAME_DATA){
-  if(Array.isArray(window.GAME_DATA.vocab)&&window.GAME_DATA.vocab.length) VOCAB=window.GAME_DATA.vocab;
-  if(Array.isArray(window.GAME_DATA.sentences)&&window.GAME_DATA.sentences.length) SENTENCES=window.GAME_DATA.sentences;
-  if(Array.isArray(window.GAME_DATA.quiz)&&window.GAME_DATA.quiz.length) QUIZ=window.GAME_DATA.quiz;
+// ============ Apply stage/admin game-data (if present) ============
+// Prefer the selected stage's data (STAGE_DATA[ACTIVE_STAGE_ID]) over the base GAME_DATA.
+const _activeStageData = (window.STAGE_DATA && window.ACTIVE_STAGE_ID && window.STAGE_DATA[window.ACTIVE_STAGE_ID]) || window.GAME_DATA;
+if(_activeStageData){
+  if(Array.isArray(_activeStageData.vocab)&&_activeStageData.vocab.length) VOCAB=_activeStageData.vocab;
+  if(Array.isArray(_activeStageData.sentences)&&_activeStageData.sentences.length) SENTENCES=_activeStageData.sentences;
+  if(Array.isArray(_activeStageData.quiz)&&_activeStageData.quiz.length) QUIZ=_activeStageData.quiz;
 }
 
 // ============ State ============
