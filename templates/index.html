@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>أكاديمية English Fun — ألعاب تعليمية</title>
+<style>
+  body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#0f172a;color:#f1f5f9;margin:0;padding:30px 16px;min-height:100vh;
+    background:radial-gradient(1200px 600px at 20% -10%,#1e3a5f 0%,transparent 60%),radial-gradient(900px 500px at 90% 10%,#3b1d5f 0%,transparent 60%),#0f172a;}
+  .wrap{max-width:980px;margin:0 auto}
+  h1{font-size:clamp(26px,4vw,40px);background:linear-gradient(90deg,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;text-align:center}
+  p.sub{text-align:center;color:#94a3b8;margin:6px 0 24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .card{background:linear-gradient(160deg,#1e293b,#162033);border:1px solid #334155;border-radius:16px;padding:20px 16px;text-decoration:none;color:#f1f5f9;transition:transform .18s,border-color .18s}
+  .card:hover{transform:translateY(-4px);border-color:#22d3ee}
+  .card .ico{font-size:32px;margin-bottom:8px}
+  .card h3{margin:0 0 4px;font-size:17px}
+  .card p{margin:0;font-size:13px;color:#94a3b8;line-height:1.5}
+  .card .tag{display:inline-block;margin-top:10px;font-size:11px;padding:3px 9px;border-radius:999px;background:rgba(167,139,250,.15);color:#a78bfa}
+  footer{text-align:center;color:#64748b;margin-top:30px;font-size:13px}
+</style>
+<link rel="stylesheet" href="gamification.css">
+<script src="gamification.js"></script>
+
+
+<script src="stages.js" onerror="window.STAGES=null;"></script>
+<script>
+(function(){
+  // base data (fallback)
+  document.write('<script src="game-data.js"><\/script>');
+  var slug=null; try{ slug=localStorage.getItem('efun_stage'); }catch(e){}
+  var stages=window.STAGES;
+  if(stages && stages.length){
+    var active=null;
+    for(var i=0;i<stages.length;i++){ if(stages[i].id===slug){ active=stages[i]; break; } }
+    if(!active) active=stages[0];
+    window.ACTIVE_STAGE_ID=active.id;
+    window.ACTIVE_STAGE_NAME=active.name;
+    // override with stage-specific data (if file exists)
+    document.write('<script src="'+active.file+'"><\/script>');
+  }
+})();
+</script>
+<script src="speech-helper.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎮 أكاديمية English Fun</h1>
+  <p class="sub">ألعاب تعليمية محفزة لتعلم اللغة الإنجليزية — العب، تعلم، اجمع النقاط!</p>
+  <div class="grid">
+    <a class="card" href="match.html"><div class="ico">🔗</div><h3>وصل الكلمات</h3><p>طابق الكلمة الإنجليزية مع معناها العربي.</p><span class="tag">مفردات</span></a>
+    <a class="card" href="hit.html"><div class="ico">🎯</div><h3>اضرب الكلمة الصحيحة</h3><p>اقرأ المعنى واختر الكلمة (سباق مع الوقت).</p><span class="tag">سرعة</span></a>
+    <a class="card" href="fill.html"><div class="ico">✏️</div><h3>أكمل الجملة</h3><p>اختر الكلمة المناسبة حسب السياق.</p><span class="tag">قواعد</span></a>
+    <a class="card" href="memory.html"><div class="ico">🧠</div><h3>لعبة الذاكرة</h3><p>اقلب البطاقات وجد الأزواج.</p><span class="tag">ذاكرة</span></a>
+    <a class="card" href="scramble.html"><div class="ico">🔀</div><h3>ترتيب الحروف</h3><p>أعد ترتيب الحروف ل الكلمة.</p><span class="tag">إملاء</span></a>
+    <a class="card" href="hangman.html"><div class="ico">🪢</div><h3>شنق الرجل</h3><p>خمّن الكلمة letter by letter.</p><span class="tag">تخمين</span></a>
+    <a class="card" href="quiz.html"><div class="ico">❓</div><h3>اختبار سريع</h3><p>أسئلة متعددة الخيارات.</p><span class="tag">اختبار</span></a>
+    <a class="card" href="typing.html"><div class="ico">⌨️</div><h3>كتابة سريعة</h3><p>اكتب الترجمة الإنجليزية للكلمة.</p><span class="tag">كتابة</span></a>
+    <a class="card" href="listening.html"><div class="ico">🎧</div><h3>تحدي الاستماع</h3><p>استمع للكلمة وطابق معناها.</p><span class="tag">استماع</span></a>
+    <a class="card" href="interactive.html"><div class="ico">🎮</div><h3>أسئلة تفاعلية</h3><p>اضغط، اسحب، ابنِ الجملة.</p><span class="tag">تفاعلي</span></a>
+    <a class="card" href="platformer.html"><div class="ico">🕹️</div><h3>منصات English Fun</h3><p>لعبة منصات (Phaser.js) — 4 شخصيات.</p><span class="tag">منصات</span></a>
+    <a class="card" href="admin.html"><div class="ico">🔐</div><h3>لوحة الإدارة</h3><p>رفع Excel (للمدير فقط) وتوليد game-data.js.</p><span class="tag">مدير</span></a>
+  </div>
+  <footer>© English Fun — ألعاب تعليمية للإنجليزية</footer>
+</div>
+</body>
+</html>

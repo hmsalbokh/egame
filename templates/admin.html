@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>English Fun — لوحة الإدارة</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{--bg:#0f172a;--card:#1e293b;--card2:#263449;--accent:#22d3ee;--accent2:#a78bfa;--good:#22c55e;--bad:#ef4444;--warn:#f59e0b;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:radial-gradient(1200px 600px at 20% -10%,#1e3a5f 0%,transparent 60%),radial-gradient(900px 500px at 90% 10%,#3b1d5f 0%,transparent 60%),var(--bg);color:var(--text);min-height:100vh;padding:30px 16px;}
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:clamp(24px,4vw,34px);background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;text-align:center;margin-bottom:6px}
+  p.sub{text-align:center;color:var(--muted);margin-bottom:24px}
+  .panel{background:rgba(30,41,59,.75);border:1px solid var(--border);border-radius:18px;padding:22px;backdrop-filter:blur(6px);margin-bottom:16px}
+  .btn{background:linear-gradient(135deg,var(--accent),#0ea5e9);color:#0f172a;border:none;border-radius:12px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:14px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+  .btn.sm{padding:6px 12px;font-size:12px}
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.92);display:flex;align-items:center;justify-content:center;z-index:1000}
+  .loginbox{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:30px;max-width:360px;width:90%;text-align:center}
+  .loginbox input{width:100%;padding:12px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;margin:12px 0}
+  .loginbox input:focus{outline:none;border-color:var(--accent)}
+  .stat{display:inline-block;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin:4px;font-size:13px}
+  .stat b{color:var(--accent)}
+  #status{margin-top:10px;font-size:13px}
+  code{background:var(--card2);padding:2px 6px;border-radius:6px;font-size:12px}
+  .links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .links a{color:var(--accent);text-decoration:none;font-size:13px}
+</style>
+<link rel="stylesheet" href="gamification.css">
+<script src="gamification.js"></script>
+</head>
+<body>
+<div class="overlay" id="overlay">
+  <div class="loginbox">
+    <div style="font-size:36px">🔐</div>
+    <h2 style="margin:8px 0">تسجيل دخول المدير</h2>
+    <p style="color:var(--muted);font-size:13px">أدخل كلمة مرور المدير للوصول</p>
+    <input type="password" id="pwd" placeholder="كلمة المرور" />
+    <button class="btn" onclick="login()" style="width:100%">دخول</button>
+    <div id="loginErr" style="color:var(--bad);font-size:13px;margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="wrap" id="adminPanel" style="display:none">
+  <h1>🛠️ لوحة إدارة English Fun</h1>
+  <p class="sub">رفع ملف Excel وتوليد <code>game-data.js</code> لجميع الألعاب</p>
+
+  <div class="panel">
+    <h3 style="margin-bottom:8px">📂 رفع ملف Excel</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:10px">
+      استخدم <code>excel-template.xlsx</code> (أوراق: Vocabulary / Sentences / Quiz).
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <select id="stageSelect" onchange="onStageSelect()" style="padding:8px;border-radius:8px;border:2px solid var(--border);background:var(--bg);color:var(--text);min-width:200px">
+        <option value="">-- اختر مرحلة --</option>
+        <option value="s1">أول متوسط</option>
+        <option value="s2">ثاني متوسط</option>
+        <option value="s3">ثالث متوسط</option>
+        <option value="s4">أول ثانوي</option>
+        <option value="s5">ثاني ثانوي</option>
+        <option value="s6">ثالث ثانوي</option>
+        <option value="custom">أخرى (جديد)</option>
+      </select>
+      <input type="text" id="stageName" placeholder="اسم المرحلة" style="padding:8px;border-radius:8px;border:2px solid var(--border);background:var(--bg);color:var(--text);min-width:200px" />
+      <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="color:var(--text)" onchange="autoStageName()" />
+    </div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:8px">💡 اسم المرحلة يُشتق تلقائياً من اسم الملف (يمكن تعديله). كل رفع = مرحلة معزولة (لوحة أبطال منفصلة).</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn sm" onclick="loadExcel()">تحميل ومعاينة</button>
+      <a class="btn ghost sm" href="excel-template.xlsx" download>⬇️ تحميل القالب</a>
+    </div>
+    <div id="status" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
+    <div id="preview" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-bottom:8px">⬇️ توليد game-data.js</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:10px">
+      بعد تحميل الملف، ولّد <code>game-data.js</code> وارفعه إلى نفس مجلد الألعاب على الخادم. جميع الألعاب ستستخدم بياناتك تلقائياً.
+    </p>
+    <button class="btn" onclick="generateData()">توليد وتحميل game-data.js</button>
+    <div id="genStatus" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-bottom:8px">📚 المراحل المسجلة</h3>
+    <div id="stagesList" style="margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn sm" onclick="addPresetStages()">➕ إضافة 6 مراحل (متوسط/ثانوي)</button>
+      <button class="btn sm" onclick="generateStagesJs()">⬇️ توليد stages.js</button>
+    </div>
+    <p style="color:var(--muted);font-size:12px;margin-top:8px">ارفع جميع ملفات game-data-*.js + stages.js إلى مجلد الألعاب.</p>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-bottom:8px">⚡ تحديث أبطال الأسبوع السريع (لصق التقارير)</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:10px">
+      الصق تقارير الطلاب (من WhatsApp/Telegram) — كل تقرير في سطر. يتم دمجها مع لوحة الصدارة الحالية (الاحتفاظ بالنقاط الأعلى).
+    </p>
+    <textarea id="reportText" placeholder="🏆 تقرير بطل الألعاب: أحمد | المستوى: 5 | النقاط: 1200 | السلسلة: 7 يوم | الأوسمة: 3 | اللقب: صائد الكلمات" style="width:100%;min-height:120px;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;resize:vertical"></textarea>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">
+      <input type="file" id="existingDataFile" accept=".js" style="color:var(--text)" />
+      <button class="btn sm" onclick="loadExistingData()">📂 تحميل game-data-*.js (اختياري)</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">
+      <button class="btn" onclick="parseReports()">🔍 تحليل وتحديث لوحة الصدارة</button>
+      <button class="btn ghost sm" onclick="downloadUpdatedData()">⬇️ تحميل game-data-<slug>.js (محدّث)</button>
+    </div>
+    <div id="reportStatus" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
+    <div id="lbPreview" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel">
+    <h3 style="margin-bottom:8px">🔗 روابط الألعاب</h3>
+    <div class="links">
+      <a href="index.html">القائمة</a>
+      <a href="match.html">وصل الكلمات</a>
+      <a href="hit.html">اضرب الكلمة</a>
+      <a href="fill.html">أكمل الجملة</a>
+      <a href="memory.html">الذاكرة</a>
+      <a href="scramble.html">ترتيب الحروف</a>
+      <a href="hangman.html">شنق الرجل</a>
+      <a href="quiz.html">اختبار</a>
+      <a href="typing.html">كتابة</a>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:10px">
+    <button class="btn ghost sm" onclick="logout()">تسجيل خروج</button>
+  </div>
+</div>
+
+<script>
+// ============ Admin auth ============
+// Change this password to your own. (Client-side only; for real security use a backend.)
+const ADMIN_PASSWORD = 'admin123';
+
+function login(){
+  const v = document.getElementById('pwd').value;
+  if(v === ADMIN_PASSWORD){
+    sessionStorage.setItem('efun_admin','1');
+    document.getElementById('overlay').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+    renderStagesList();
+  } else {
+    document.getElementById('loginErr').textContent='❌ كلمة مرور خاطئة';
+  }
+}
+function logout(){ sessionStorage.removeItem('efun_admin'); location.reload(); }
+if(sessionStorage.getItem('efun_admin')==='1'){
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('adminPanel').style.display='block';
+  renderStagesList();
+}
+document.getElementById('pwd').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+
+// ============ Data ============
+let parsedData = null;
+
+function loadExcel(){
+  const input = document.getElementById('excelFile');
+  const status = document.getElementById('status');
+  const preview = document.getElementById('preview');
+  if(!input.files || !input.files[0]){ status.textContent='⚠️ اختر ملفاً أولاً'; status.style.color='var(--warn)'; return; }
+  if(typeof XLSX === 'undefined'){ status.textContent='❌ مكتبة Excel غير محملة'; status.style.color='var(--bad)'; return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      parsedData = parseWorkbook(wb);
+      let ok = (parsedData.vocab.length||parsedData.sentences.length||parsedData.quiz.length);
+      if(!ok){ status.textContent='⚠️ لم يتم العثور على بيانات'; status.style.color='var(--warn)'; return; }
+      status.textContent = '✅ تم التحميل: ' + parsedData.vocab.length + ' كلمة، ' + parsedData.sentences.length + ' جملة، ' + parsedData.quiz.length + ' سؤال';
+      status.style.color='var(--good)';
+      preview.innerHTML = '<div class="stat">كلمات: <b>'+parsedData.vocab.length+'</b></div>' +
+        '<div class="stat">جمل: <b>'+parsedData.sentences.length+'</b></div>' +
+        '<div class="stat">أسئلة: <b>'+parsedData.quiz.length+'</b></div>' +
+        '<div class="stat">أبطال: <b>'+(parsedData.leaderboard?parsedData.leaderboard.length:0)+'</b></div>';
+    }catch(err){
+      status.textContent='❌ خطأ: ' + err.message; status.style.color='var(--bad)';
+    }
+  };
+  reader.readAsArrayBuffer(input.files[0]);
+}
+function parseWorkbook(wb){
+  function rows(name){
+    const sh = wb.Sheets[name]; if(!sh) return [];
+    return XLSX.utils.sheet_to_json(sh, {header:1, defval:''});
+  }
+  let vocab=[];
+  let vRows = rows('Vocabulary');
+  if(!vRows.length && wb.SheetNames.length) vRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+  for(let i=1;i<vRows.length;i++){
+    const r=vRows[i]; if(!r) continue;
+    const en=String(r[0]||'').trim(); if(!en) continue;
+    vocab.push({en, ar:String(r[1]||'').trim(), emoji:sanitizeEmoji(r[2])});
+  }
+  let sentences=[];
+  const sRows = rows('Sentences');
+  for(let i=1;i<sRows.length;i++){
+    const r=sRows[i]; if(!r) continue;
+    const s=String(r[0]||'').trim(); if(!s) continue;
+    const opts=String(r[2]||'').split(',').map(x=>x.trim()).filter(Boolean);
+    sentences.push({s, a:String(r[1]||'').trim(), opts});
+  }
+  let quiz=[];
+  const qRows = rows('Quiz');
+  for(let i=1;i<qRows.length;i++){
+    const r=qRows[i]; if(!r) continue;
+    const q=String(r[0]||'').trim(); if(!q) continue;
+    const opts=String(r[2]||'').split(',').map(x=>x.trim()).filter(Boolean);
+    quiz.push({q, a:String(r[1]||'').trim(), opts});
+  }
+  // Leaderboard sheet (optional): Name, Points, Title
+  let leaderboard=[];
+  const lRows = rows('Leaderboard');
+  for(let i=1;i<lRows.length;i++){
+    const r=lRows[i]; if(!r) continue;
+    const name=String(r[0]||'').trim(); if(!name) continue;
+    leaderboard.push({Name:name, Points:parseInt(r[1],10)||0, Title:String(r[2]||'').trim()});
+  }
+  return {vocab, sentences, quiz, leaderboard};
+}
+
+function slugify(s){ return String(s||'').trim().toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g,'-').replace(/^-+|-+$/g,'') || 'stage'; }
+function sanitizeEmoji(val){
+  const v = String(val==null?'':val).trim();
+  if(!v) return '📘';
+  // PUA ranges: \uE000-\uF8FF and supplemental \u{F0000}-\u{10FFFD}
+  if(/[\uE000-\uF8FF]/.test(v)) return '📘';
+  const cp = v.codePointAt(0);
+  if(cp !== undefined && cp >= 0xF0000 && cp <= 0x10FFFD) return '📘';
+  // also check any char in string
+  for(const ch of v){ const c = ch.codePointAt(0); if((c>=0xE000 && c<=0xF8FF) || (c>=0xF0000 && c<=0x10FFFD)) return '📘'; }
+  return v;
+}
+function autoStageName(){
+  const input = document.getElementById('excelFile');
+  const nameInput = document.getElementById('stageName');
+  if(!input.files || !input.files[0]) return;
+  const fname = input.files[0].name.replace(/\.[^.]+$/,'');
+  if(!nameInput.value.trim()) nameInput.value = fname;
+}
+function onStageSelect(){
+  const sel = document.getElementById('stageSelect');
+  const nameInput = document.getElementById('stageName');
+  const v = sel.value;
+  const names = {s1:'أول متوسط',s2:'ثاني متوسط',s3:'ثالث متوسط',s4:'أول ثانوي',s5:'ثاني ثانوي',s6:'ثالث ثانوي'};
+  if(v && v!=='custom'){ nameInput.value = names[v]||v; }
+  else if(v==='custom'){ nameInput.value=''; nameInput.focus(); }
+}
+function getStages(){ try{ return JSON.parse(localStorage.getItem('efun_admin_stages')||'[]'); }catch(e){ return []; } }
+function saveStages(list){ localStorage.setItem('efun_admin_stages', JSON.stringify(list)); }
+function addPresetStages(){
+  const presets = [
+    {id:'s1', name:'أول متوسط', file:'game-data-s1.js'},
+    {id:'s2', name:'ثاني متوسط', file:'game-data-s2.js'},
+    {id:'s3', name:'ثالث متوسط', file:'game-data-s3.js'},
+    {id:'s4', name:'أول ثانوي', file:'game-data-s4.js'},
+    {id:'s5', name:'ثاني ثانوي', file:'game-data-s5.js'},
+    {id:'s6', name:'ثالث ثانوي', file:'game-data-s6.js'},
+  ];
+  const list = getStages();
+  presets.forEach(p=>{ if(!list.find(s=>s.id===p.id)) list.push(p); });
+  saveStages(list);
+  renderStagesList();
+}
+function generateData(){
+  const genStatus = document.getElementById('genStatus');
+  if(!parsedData){ genStatus.textContent='⚠️ حمّل ملف Excel أولاً'; genStatus.style.color='var(--warn)'; return; }
+  const sel = document.getElementById('stageSelect');
+  const stageName = (document.getElementById('stageName').value||'').trim() || 'مرحلة جديدة';
+  const selVal = sel ? sel.value : '';
+  const slug = (selVal && selVal!=='custom') ? selVal : slugify(stageName);
+  const fileName = 'game-data-' + slug + '.js';
+  const content = 'window.STAGE_DATA = window.STAGE_DATA || {};\nwindow.STAGE_DATA[\'' + slug + '\'] = ' + JSON.stringify(parsedData, null, 2) + ';';
+  // register stage
+  const list = getStages();
+  if(!list.find(s=>s.id===slug)) list.push({id:slug, name:stageName, file:fileName});
+  else list.find(s=>s.id===slug).name = stageName;
+  saveStages(list);
+  // download data file
+  const blob = new Blob([content], {type:'application/javascript'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=fileName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  genStatus.textContent='✅ تم توليد ' + fileName + ' — ارفعه + stages.js إلى مجلد الألعاب';
+  genStatus.style.color='var(--good)';
+  renderStagesList();
+}
+function generateStagesJs(){
+  const list = getStages();
+  if(!list.length){ alert('لا توجد مراحل مسجلة'); return; }
+  const content = 'window.STAGES = ' + JSON.stringify(list, null, 2) + ';';
+  const blob = new Blob([content], {type:'application/javascript'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='stages.js';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function renderStagesList(){
+  const el = document.getElementById('stagesList');
+  if(!el) return;
+  const list = getStages();
+  el.innerHTML = list.length ? list.map(s=>'<div class="stat">'+s.name+' <b>('+s.id+')</b></div>').join('') : '<span style="color:var(--muted);font-size:13px">لا توجد مراحل مسجلة</span>';
+}
+// ===== Quick Leaderboard Updater =====
+let quickLbData = {vocab:[], sentences:[], quiz:[], leaderboard:[]};
+
+function loadExistingData(){
+  const input = document.getElementById('existingDataFile');
+  const status = document.getElementById('reportStatus');
+  if(!input.files || !input.files[0]){ status.textContent='⚠️ اختر ملف game-data-*.js'; status.style.color='var(--warn)'; return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const text = e.target.result;
+      // extract JSON object from window.GAME_DATA = {...}; or window.STAGE_DATA[...] = {...};
+      const first = text.indexOf('{');
+      const last = text.lastIndexOf('}');
+      if(first<0 || last<0){ throw new Error('لا يوجد JSON'); }
+      const obj = JSON.parse(text.slice(first, last+1));
+      quickLbData = {
+        vocab: Array.isArray(obj.vocab)?obj.vocab:[],
+        sentences: Array.isArray(obj.sentences)?obj.sentences:[],
+        quiz: Array.isArray(obj.quiz)?obj.quiz:[],
+        leaderboard: Array.isArray(obj.leaderboard)?obj.leaderboard:[]
+      };
+      status.textContent = '✅ تم تحميل البيانات: ' + quickLbData.vocab.length + ' كلمة، ' + quickLbData.sentences.length + ' جملة، ' + quickLbData.quiz.length + ' سؤال، ' + quickLbData.leaderboard.length + ' بطل';
+      status.style.color='var(--good)';
+      renderLbPreview();
+    }catch(err){
+      status.textContent='❌ خطأ: ' + err.message; status.style.color='var(--bad)';
+    }
+  };
+  reader.readAsText(input.files[0]);
+}
+
+function parseReports(){
+  const status = document.getElementById('reportStatus');
+  const textarea = document.getElementById('reportText');
+  const text = textarea.value || '';
+  const lines = text.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  const regex = /تقرير بطل الألعاب:\s*(.+?)\s*\|\s*المستوى:\s*(\d+)\s*\|\s*النقاط:\s*(\d+)\s*\|\s*السلسلة:\s*(\d+)\s*يوم\s*\|\s*الأوسمة:\s*(\d+)\s*\|\s*اللقب:\s*(.+)/;
+  const parsed = [];
+  let skipped = 0;
+  lines.forEach(line=>{
+    const m = line.match(regex);
+    if(!m){ skipped++; return; }
+    const name = m[1].trim();
+    const points = parseInt(m[3],10) || 0;
+    const title = m[6].trim();
+    parsed.push({Name:name, Points:points, Title:title});
+  });
+  // merge with existing
+  const merged = (quickLbData.leaderboard||[]).slice();
+  parsed.forEach(p=>{
+    const idx = merged.findIndex(e=>String(e.Name||e.name||'').trim()===p.Name);
+    if(idx>=0){
+      const ex = merged[idx];
+      const exPts = parseInt(ex.Points||ex.points||0,10)||0;
+      merged[idx] = {Name:p.Name, Points:Math.max(exPts, p.Points), Title:p.Title || (ex.Title||ex.title||'')};
+    } else {
+      merged.push(p);
+    }
+  });
+  // sort desc, keep top 15
+  merged.sort((a,b)=> (parseInt(b.Points||b.points||0,10)||0) - (parseInt(a.Points||a.points||0,10)||0));
+  quickLbData.leaderboard = merged.slice(0,15);
+  status.textContent = '✅ تم تحليل ' + parsed.length + ' تقرير' + (skipped?' ('+skipped+' تخطي)':'') + ' — إجمالي ' + quickLbData.leaderboard.length + ' بطل';
+  status.style.color='var(--good)';
+  renderLbPreview();
+}
+
+function renderLbPreview(){
+  const el = document.getElementById('lbPreview');
+  if(!el) return;
+  const lb = quickLbData.leaderboard||[];
+  if(!lb.length){ el.innerHTML='<span style="color:var(--muted);font-size:13px">لا توجد بيانات</span>'; return; }
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--card2)"><th style="padding:6px;border:1px solid var(--border)">#</th><th style="padding:6px;border:1px solid var(--border)">الاسم</th><th style="padding:6px;border:1px solid var(--border)">النقاط</th><th style="padding:6px;border:1px solid var(--border)">اللقب</th><th style="padding:6px;border:1px solid var(--border)">حذف</th></tr></thead><tbody>';
+  lb.forEach((r,i)=>{
+    html += '<tr><td style="padding:6px;border:1px solid var(--border);text-align:center">'+(i+1)+'</td><td style="padding:6px;border:1px solid var(--border)">'+(r.Name||r.name||'')+'</td><td style="padding:6px;border:1px solid var(--border);text-align:center">'+(r.Points||r.points||0)+'</td><td style="padding:6px;border:1px solid var(--border)">'+(r.Title||r.title||'')+'</td><td style="padding:6px;border:1px solid var(--border);text-align:center"><button class="btn danger sm" onclick="deleteLbEntry('+i+')">✕</button></td></tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function deleteLbEntry(i){
+  if(!quickLbData.leaderboard) return;
+  quickLbData.leaderboard.splice(i,1);
+  renderLbPreview();
+}
+
+function downloadUpdatedData(){
+  const status = document.getElementById('reportStatus');
+  const sel = document.getElementById('stageSelect');
+  const stageName = (document.getElementById('stageName').value||'').trim() || 'مرحلة';
+  const selVal = sel ? sel.value : '';
+  const slug = (selVal && selVal!=='custom') ? selVal : slugify(stageName);
+  const fileName = 'game-data-' + slug + '.js';
+  // build data: preserve quickLbData; if empty vocab, fall back to parsedData (from Excel)
+  let data = null;
+  if(quickLbData.vocab.length || quickLbData.sentences.length || quickLbData.quiz.length || quickLbData.leaderboard.length){
+    data = quickLbData;
+  } else if(parsedData){
+    data = parsedData;
+  } else {
+    data = {vocab:[], sentences:[], quiz:[], leaderboard:[]};
+  }
+  // ensure leaderboard normalized to Name/Points/Title
+  data.leaderboard = (data.leaderboard||[]).map(r=>({Name:r.Name||r.name||'', Points:parseInt(r.Points||r.points||0,10)||0, Title:r.Title||r.title||''}));
+  const content = 'window.STAGE_DATA = window.STAGE_DATA || {};\nwindow.STAGE_DATA[\'' + slug + '\'] = ' + JSON.stringify(data, null, 2) + ';';
+  const blob = new Blob([content], {type:'application/javascript'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=fileName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  status.textContent = '✅ تم تحميل ' + fileName + ' (leaderboard: ' + data.leaderboard.length + ')';
+  status.style.color='var(--good)';
+}
+
+</script>
+</body>
+</html>

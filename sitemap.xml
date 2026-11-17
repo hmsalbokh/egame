@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://yoursite.com/games/landing.html</loc><priority>1.0</priority></url>
+  <url><loc>https://yoursite.com/games/index.html</loc><priority>0.9</priority></url>
+  <url><loc>https://yoursite.com/games/match.html</loc><priority>0.7</priority></url>
+  <url><loc>https://yoursite.com/games/hit.html</loc><priority>0.7</priority></url>
+  <url><loc>https://yoursite.com/games/fill.html</loc><priority>0.7</priority></url>
+  <url><loc>https://yoursite.com/games/memory.html</loc><priority>0.7</priority></url>
+  <url><loc>https://yoursite.com/games/scramble.html</loc><priority>0.7</priority></url>
+  <url><loc>https://yoursite.com/games/hangman.html</loc><priority>0.7</priority></url>
+  <url><loc>https://yoursite.com/games/quiz.html</loc><priority>0.7</priority></url>
+  <url><loc>https://yoursite.com/games/typing.html</loc><priority>0.7</priority></url>
+  <url><loc>https://yoursite.com/games/interactive.html</loc><priority>0.7</priority></url>
+</urlset>
