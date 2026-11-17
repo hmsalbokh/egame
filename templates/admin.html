@@ -348,10 +348,9 @@ function loadExistingData(){
     try{
       const text = e.target.result;
       // extract JSON object from window.GAME_DATA = {...}; or window.STAGE_DATA[...] = {...};
-      const first = text.indexOf('{');
-      const last = text.lastIndexOf('}');
-      if(first<0 || last<0){ throw new Error('لا يوجد JSON'); }
-      const obj = JSON.parse(text.slice(first, last+1));
+      const m = text.match(/=\s*(\{[\s\S]*\})\s*;?\s*$/);
+      if(!m){ throw new Error('لم يُعثر على JSON'); }
+      const obj = JSON.parse(m[1]);
       quickLbData = {
         vocab: Array.isArray(obj.vocab)?obj.vocab:[],
         sentences: Array.isArray(obj.sentences)?obj.sentences:[],
@@ -480,10 +479,10 @@ function viewFromFile(){
 }
 function parseViewData(text){
   const status = document.getElementById('viewStatus');
-  const first = text.indexOf('{'); const last = text.lastIndexOf('}');
-  if(first<0 || last<0){ status.textContent='لم يُعثر على JSON'; status.style.color='var(--bad)'; return; }
+  const m = text.match(/=\s*(\{[\s\S]*\})\s*;?\s*$/);
+  if(!m){ status.textContent='لم يُعثر على JSON'; status.style.color='var(--bad)'; return; }
   try{
-    const obj = JSON.parse(text.slice(first, last+1));
+    const obj = JSON.parse(m[1]);
     viewData = {vocab: obj.vocab||[], sentences: obj.sentences||[], quiz: obj.quiz||[], leaderboard: obj.leaderboard||[]};
     document.getElementById('viewTabs').style.display='block';
     showViewTab(viewTab);
