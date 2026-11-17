@@ -113,6 +113,37 @@
   </div>
 
   <div class="panel">
+    <h3 style="margin-bottom:8px">عرض الجداول الموجودة (الكلمات المضافة)</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:10px">
+      اختر مرحلة لتحميل بياناتها من الخادم، أو حمّل ملف <code>game-data-*.js</code> من جهازك. ستظهر المفردات/الجمل/الاختبار/المتصدرين.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <select id="viewStageSelect" style="padding:8px;border-radius:8px;border:2px solid var(--border);background:var(--bg);color:var(--text);min-width:200px">
+        <option value="">-- اختر مرحلة --</option>
+        <option value="s1">أول متوسط</option>
+        <option value="s2">ثاني متوسط</option>
+        <option value="s3">ثالث متوسط</option>
+        <option value="s4">أول ثانوي</option>
+        <option value="s5">ثاني ثانوي</option>
+        <option value="s6">ثالث ثانوي</option>
+      </select>
+      <button class="btn sm" onclick="viewStageData()">عرض من الخادم</button>
+      <input type="file" id="viewDataFile" accept=".js" style="color:var(--text)" />
+      <button class="btn ghost sm" onclick="viewFromFile()">عرض من ملف</button>
+    </div>
+    <div id="viewStatus" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
+    <div id="viewTabs" style="margin-top:12px;display:none">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn sm" onclick="showViewTab('vocab')">مفردات</button>
+        <button class="btn sm" onclick="showViewTab('sentences')">جمل</button>
+        <button class="btn sm" onclick="showViewTab('quiz')">اختبار</button>
+        <button class="btn sm" onclick="showViewTab('leaderboard')">متصدرين</button>
+      </div>
+      <div id="viewContent" style="max-height:420px;overflow:auto"></div>
+    </div>
+  </div>
+
+  <div class="panel">
     <h3 style="margin-bottom:8px">🔗 روابط الألعاب</h3>
     <div class="links">
       <a href="index.html">القائمة</a>
@@ -419,6 +450,74 @@ function downloadUpdatedData(){
   status.style.color='var(--good)';
 }
 
+// ===== View existing tables (words added) =====
+let viewData = null;
+let viewTab = 'vocab';
+
+async function viewStageData(){
+  const sel = document.getElementById('viewStageSelect').value;
+  const status = document.getElementById('viewStatus');
+  if(!sel){ status.textContent='اختر مرحلة أولاً'; status.style.color='var(--warn)'; return; }
+  const file = 'game-data-' + sel + '.js';
+  status.textContent = 'جاري التحميل...'; status.style.color='var(--muted)';
+  try{
+    const res = await fetch('./' + file, {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    parseViewData(text);
+    status.textContent = 'تم تحميل ' + file; status.style.color='var(--good)';
+  }catch(err){
+    status.textContent = 'فشل: ' + err.message; status.style.color='var(--bad)';
+  }
+}
+function viewFromFile(){
+  const input = document.getElementById('viewDataFile');
+  const status = document.getElementById('viewStatus');
+  if(!input.files || !input.files[0]){ status.textContent='اختر ملفاً'; status.style.color='var(--warn)'; return; }
+  const reader = new FileReader();
+  reader.onload = function(e){ parseViewData(e.target.result); };
+  reader.readAsText(input.files[0]);
+}
+function parseViewData(text){
+  const status = document.getElementById('viewStatus');
+  const first = text.indexOf('{'); const last = text.lastIndexOf('}');
+  if(first<0 || last<0){ status.textContent='لم يُعثر على JSON'; status.style.color='var(--bad)'; return; }
+  try{
+    const obj = JSON.parse(text.slice(first, last+1));
+    viewData = {vocab: obj.vocab||[], sentences: obj.sentences||[], quiz: obj.quiz||[], leaderboard: obj.leaderboard||[]};
+    document.getElementById('viewTabs').style.display='block';
+    showViewTab(viewTab);
+    status.textContent = 'مفردات: '+viewData.vocab.length+' | جمل: '+viewData.sentences.length+' | اختبار: '+viewData.quiz.length+' | متصدرين: '+viewData.leaderboard.length;
+    status.style.color='var(--good)';
+  }catch(err){
+    status.textContent='خطأ: '+err.message; status.style.color='var(--bad)';
+  }
+}
+function showViewTab(tab){
+  viewTab = tab;
+  const el = document.getElementById('viewContent');
+  if(!viewData || !el){ return; }
+  let html = '';
+  if(tab==='vocab'){
+    html = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--card2)"><th style="padding:6px;border:1px solid var(--border)">#</th><th style="padding:6px;border:1px solid var(--border)">English</th><th style="padding:6px;border:1px solid var(--border)">Arabic</th><th style="padding:6px;border:1px solid var(--border)">Emoji</th></tr></thead><tbody>';
+    viewData.vocab.forEach((v,i)=>{ html += '<tr><td style="padding:6px;border:1px solid var(--border);text-align:center">'+(i+1)+'</td><td style="padding:6px;border:1px solid var(--border);direction:ltr">'+(v.en||'')+'</td><td style="padding:6px;border:1px solid var(--border)">'+(v.ar||'')+'</td><td style="padding:6px;border:1px solid var(--border);text-align:center">'+(v.emoji||'')+'</td></tr>'; });
+    html += '</tbody></table>';
+  } else if(tab==='sentences'){
+    html = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--card2)"><th style="padding:6px;border:1px solid var(--border)">#</th><th style="padding:6px;border:1px solid var(--border)">Sentence</th><th style="padding:6px;border:1px solid var(--border)">Answer</th><th style="padding:6px;border:1px solid var(--border)">Options</th></tr></thead><tbody>';
+    viewData.sentences.forEach((s,i)=>{ html += '<tr><td style="padding:6px;border:1px solid var(--border);text-align:center">'+(i+1)+'</td><td style="padding:6px;border:1px solid var(--border);direction:ltr">'+(s.s||'')+'</td><td style="padding:6px;border:1px solid var(--border);direction:ltr">'+(s.a||'')+'</td><td style="padding:6px;border:1px solid var(--border);direction:ltr">'+(s.opts||[]).join(', ')+'</td></tr>'; });
+    html += '</tbody></table>';
+  } else if(tab==='quiz'){
+    html = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--card2)"><th style="padding:6px;border:1px solid var(--border)">#</th><th style="padding:6px;border:1px solid var(--border)">Question</th><th style="padding:6px;border:1px solid var(--border)">Answer</th><th style="padding:6px;border:1px solid var(--border)">Options</th></tr></thead><tbody>';
+    viewData.quiz.forEach((q,i)=>{ html += '<tr><td style="padding:6px;border:1px solid var(--border);text-align:center">'+(i+1)+'</td><td style="padding:6px;border:1px solid var(--border)">'+(q.q||'')+'</td><td style="padding:6px;border:1px solid var(--border)">'+(q.a||'')+'</td><td style="padding:6px;border:1px solid var(--border)">'+(q.opts||[]).join(', ')+'</td></tr>'; });
+    html += '</tbody></table>';
+  } else if(tab==='leaderboard'){
+    html = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--card2)"><th style="padding:6px;border:1px solid var(--border)">#</th><th style="padding:6px;border:1px solid var(--border)">Name</th><th style="padding:6px;border:1px solid var(--border)">Points</th><th style="padding:6px;border:1px solid var(--border)">Title</th></tr></thead><tbody>';
+    viewData.leaderboard.forEach((r,i)=>{ html += '<tr><td style="padding:6px;border:1px solid var(--border);text-align:center">'+(i+1)+'</td><td style="padding:6px;border:1px solid var(--border)">'+(r.Name||r.name||'')+'</td><td style="padding:6px;border:1px solid var(--border);text-align:center">'+(r.Points||r.points||0)+'</td><td style="padding:6px;border:1px solid var(--border)">'+(r.Title||r.title||'')+'</td></tr>'; });
+    html += '</tbody></table>';
+  }
+  if(!html) html = '<span style="color:var(--muted)">لا بيانات</span>';
+  el.innerHTML = html;
+}
 </script>
 </body>
 </html>
