@@ -553,16 +553,13 @@ class GameScene extends Phaser.Scene {
     const w=this.scale.width, h=this.scale.height;
     const lvl = window.PLATFORMER_DATA.levels[this.levelNum] || window.PLATFORMER_DATA.levels[1];
     this.cameras.main.setBackgroundColor(lvl.bgColor);
+    this.addLevelDecor(w, h, lvl, this.levelNum);
 
     // ground
     this.platforms = this.physics.add.staticGroup();
-    for(let x=0;x<w*3;x+=32){ this.platforms.create(x, h-32, 'tile_ground').setOrigin(0,0).refreshBody(); }
+    for(let x=0;x<w*3;x+=32){ const gt = this.platforms.create(x, h-32, 'tile_ground').setOrigin(0,0); gt.setTint(lvl.tileColor); gt.refreshBody(); }
     // elevated platforms
-    this.platforms.create(200, h-120, 'tile_platform');
-    this.platforms.create(360, h-180, 'tile_platform');
-    this.platforms.create(520, h-120, 'tile_platform');
-    this.platforms.create(720, h-200, 'tile_platform');
-    this.platforms.create(900, h-140, 'tile_platform');
+    [[200, h-120],[360, h-180],[520, h-120],[720, h-200],[900, h-140]].forEach(([x,y])=>{ const p = this.platforms.create(x, y, 'tile_platform'); p.setTint(lvl.platformColor); });
 
     // player
     this.player = this.physics.add.sprite(60, h-100, 'p_'+this.charId+'_idle');
@@ -575,13 +572,14 @@ class GameScene extends Phaser.Scene {
 
     // spikes
     this.spikes = this.physics.add.staticGroup();
-    this.spikes.create(460, h-56, 'spike').refreshBody();
+    const sp = this.spikes.create(460, h-56, 'spike'); sp.setTint(lvl.obstacleColor); sp.refreshBody();
 
     // mid-level checkpoint stars (vocab challenges)
     this.checkpoints = this.physics.add.staticGroup();
     [[420, h-140],[760, h-200]].forEach(([x,y])=>{ const s=this.checkpoints.create(x,y,'star'); s.setData('used',false); });
     // boss at end
     this.boss = this.physics.add.staticSprite(1180, h-96, 'boss');
+    this.boss.setTint(lvl.obstacleColor);
     this.bossHP = 3;
     this.bossDefeated = false;
     // star (final, after boss) - hidden until boss defeated
@@ -644,6 +642,56 @@ class GameScene extends Phaser.Scene {
     const muteBtn = this.add.text(w - 30, 20, SoundFX.isMuted()?'🔇':'🔊', {fontSize:'22px'}).setOrigin(0.5,0).setScrollFactor(0).setDepth(100).setInteractive({useHandCursor:true});
     muteBtn.on('pointerdown',()=>{ const m=SoundFX.toggle(); muteBtn.setText(m?'🔇':'🔊'); });
     this.gradeData = window.PLATFORMER_DATA.grades[this.grade];
+  }
+  addLevelDecor(w, h, lvl, levelNum){
+    const g = this.add.graphics().setDepth(-2);
+    if(levelNum === 1){
+      // Forest: trees
+      g.fillStyle(0x14532d, 0.55);
+      for(let i=0;i<10;i++){
+        const x = Phaser.Math.Between(40, w*3-40);
+        const s = Phaser.Math.FloatBetween(0.8, 1.3);
+        g.fillTriangle(x, h-32, x-18*s, h-32, x, h-32-50*s);
+        g.fillTriangle(x, h-32-30*s, x-12*s, h-32-30*s, x, h-32-75*s);
+        g.fillTriangle(x, h-32-60*s, x-8*s, h-32-60*s, x, h-32-95*s);
+      }
+      // grass tufts
+      g.fillStyle(0x22c55e, 0.4);
+      for(let i=0;i<20;i++){ const x=Phaser.Math.Between(0,w*3); g.fillRect(x,h-34,2,4); }
+    } else if(levelNum === 2){
+      // City: buildings with windows
+      for(let i=0;i<14;i++){
+        const x = Phaser.Math.Between(0, w*3-60);
+        const bw = Phaser.Math.Between(40, 90);
+        const bh = Phaser.Math.Between(90, 220);
+        const by = h-32-bh;
+        g.fillStyle(0x1e293b, 0.75); g.fillRect(x, by, bw, bh);
+        g.fillStyle(0x334155, 0.9); g.fillRect(x, by, bw, 4);
+        g.fillStyle(0xfbbf24, 0.55);
+        for(let wx=x+6; wx<x+bw-8; wx+=12){
+          for(let wy=by+8; wy<by+bh-8; wy+=14){
+            if(Math.random()>0.35) g.fillRect(wx, wy, 5, 7);
+          }
+        }
+      }
+      // road line
+      g.fillStyle(0xfbbf24, 0.3); g.fillRect(0, h-8, w*3, 2);
+    } else {
+      // Space: stars + planet
+      g.fillStyle(0xffffff, 0.9);
+      for(let i=0;i<80;i++){
+        const x = Phaser.Math.Between(0, w*3);
+        const y = Phaser.Math.Between(0, h-80);
+        const r = Phaser.Math.FloatBetween(0.6, 2.2);
+        g.fillCircle(x, y, r);
+      }
+      // planet
+      g.fillStyle(0x7c3aed, 0.7); g.fillCircle(w*1.6, 90, 46);
+      g.fillStyle(0xa78bfa, 0.5); g.fillCircle(w*1.6-14, 76, 14);
+      g.fillStyle(0x581c87, 0.6); g.fillCircle(w*2.4, h-120, 28);
+      // shooting star
+      g.lineStyle(2, 0xffffff, 0.6); g.beginPath(); g.moveTo(w*0.8, 60); g.lineTo(w*0.8+60, 40); g.strokePath();
+    }
   }
   setupTouch(){
     const L=document.getElementById('btnLeft'), R=document.getElementById('btnRight'), J=document.getElementById('btnJump');
@@ -786,17 +834,7 @@ class GameScene extends Phaser.Scene {
   startBossFight(){
     const _sd2 = (window.STAGE_DATA && window.ACTIVE_STAGE_ID && window.STAGE_DATA[window.ACTIVE_STAGE_ID]);
     const stageData = _sd2 || (window.GAME_DATA) || (window.PLATFORMER_DATA && window.PLATFORMER_DATA.grades && window.PLATFORMER_DATA.grades[this.grade]) || {};
-    const qs = (stageData.quiz || stageData.grammar || ((window.PLATFORMER_DATA.grades||{})[this.grade]||{}).grammar || []).slice();
-    const questions = [];
-    for(let i=0;i<3;i++){
-      const g = qs[i % qs.length];
-      if(i%2===0){
-        questions.push({type:'mcq', q:g.q, a:g.a, opts:g.opts});
-      } else {
-        const words = ['I','like','to','read','books'];
-        questions.push({type:'rearrange', q:'Rearrange the words:', answer:words.join(' '), tiles:shuffle(words.slice())});
-      }
-    }
+    const questions = buildBossQuestions(stageData, this.grade);
     showBossFight(questions, this.playerHP, this.bossHP, (result)=>{
       this.playerHP = result.playerHP;
       this.bossHP = result.bossHP;
@@ -889,6 +927,51 @@ class GameScene extends Phaser.Scene {
 // HELPERS
 // ============================================================
 function shuffle(a){ const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
+
+// Build a varied, curriculum-based set of boss questions
+function buildBossQuestions(stageData, grade){
+  const pool = [];
+  const gradeData = (window.PLATFORMER_DATA && window.PLATFORMER_DATA.grades) ? (window.PLATFORMER_DATA.grades[grade] || {}) : {};
+  // 1) Grammar / quiz MCQ
+  const quiz = (stageData && (stageData.quiz || stageData.grammar)) || gradeData.grammar || [];
+  (quiz || []).forEach(q => {
+    if(q && q.q && q.a && Array.isArray(q.opts) && q.opts.length){
+      pool.push({type:'mcq', q:q.q, a:q.a, opts:q.opts.slice()});
+    }
+  });
+  // 2) Fill-in-the-blank sentences -> MCQ
+  const sentences = (stageData && stageData.sentences) || [];
+  sentences.forEach(s => {
+    if(s && s.s && s.a && Array.isArray(s.opts) && s.opts.length){
+      pool.push({type:'mcq', q:s.s, a:s.a, opts:s.opts.slice()});
+    }
+  });
+  // 3) Vocab translation (English -> Arabic)
+  const vocab = (stageData && stageData.vocab) || gradeData.vocab || [];
+  if(Array.isArray(vocab) && vocab.length >= 4){
+    shuffle(vocab.slice()).slice(0, 6).forEach(item => {
+      if(!item || !item.en || !item.ar) return;
+      const distractors = shuffle(vocab.filter(v => v && v.en !== item.en)).slice(0,3).map(v => v.ar);
+      if(distractors.length < 3) return;
+      const opts = shuffle([item.ar, ...distractors]);
+      pool.push({type:'mcq', q: 'ما معنى كلمة "'+item.en+'"' + (item.emoji ? ' '+item.emoji : '') + '؟', a: item.ar, opts: opts});
+    });
+  }
+  // dedup by question text
+  const seen = new Set();
+  const unique = pool.filter(q => { if(seen.has(q.q)) return false; seen.add(q.q); return true; });
+  let picked = shuffle(unique).slice(0, 5);
+  // fallback to grade grammar if nothing
+  if(picked.length === 0){
+    (gradeData.grammar || []).forEach(g => {
+      if(g && g.q && g.a && Array.isArray(g.opts)) picked.push({type:'mcq', q:g.q, a:g.a, opts:g.opts.slice()});
+    });
+  }
+  if(picked.length === 0){
+    picked = [{type:'mcq', q:'Choose the correct answer.', a:'yes', opts:['yes','no','maybe','none']}];
+  }
+  return picked;
+}
 
 // ============================================================
 // CHALLENGE MODAL (HTML overlay, works with mouse + touch)
