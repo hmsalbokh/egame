@@ -1009,10 +1009,13 @@ function showBossFight(questions, playerHP, bossHP, onResult, maxPlayerHP){
 // ============================================================
 // GAME START
 // ============================================================
+const isMobileDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const gameWidth = isMobileDevice ? 640 : 960;
+const gameHeight = isMobileDevice ? 360 : 540;
 const config = {
   type: Phaser.AUTO,
-  width: 960,
-  height: 540,
+  width: gameWidth,
+  height: gameHeight,
   parent: 'game',
   backgroundColor: '#0f172a',
   physics: { default:'arcade', arcade:{ gravity:{y:900}, debug:false } },
