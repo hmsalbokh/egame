@@ -1,4 +1,4 @@
-const CACHE = 'efun-v3';
+const CACHE = 'efun-v4';
 const ASSETS = [
   './index.html',
   './landing.html',
