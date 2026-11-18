@@ -74,6 +74,18 @@
     border-radius:999px;background:rgba(167,139,250,.15);color:var(--accent2);
   }
 
+  .stage-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin:16px 0}
+  .stagecard{
+    background:linear-gradient(160deg,var(--card),#162033);
+    border:1px solid var(--border);border-radius:18px;padding:24px 16px;
+    cursor:pointer;text-align:center;transition:transform .18s,box-shadow .18s,border-color .18s;
+    position:relative;overflow:hidden;
+  }
+  .stagecard:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 12px 30px rgba(34,211,238,.18)}
+  .stagecard.active{border-color:var(--accent2);box-shadow:0 0 0 2px rgba(167,139,250,.4)}
+  .stagecard .ico{font-size:34px;margin-bottom:8px}
+  .stagecard h3{font-size:17px;margin-bottom:4px}
+  .stagecard .tag{display:inline-block;margin-top:6px;font-size:11px;padding:3px 9px;border-radius:999px;background:rgba(167,139,250,.15);color:var(--accent2)}
   .view{display:none}
   .view.active{display:block;animation:fade .25s}
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -1031,9 +1043,9 @@ function renderStageSelector(){
     if(menu) menu.classList.remove('active');
     if(gate) gate.classList.add('active');
     if(gateC){
-      gateC.innerHTML = '<div style="max-width:420px;margin:40px auto;text-align:center"><div style="font-size:56px;margin-bottom:12px">📚</div><h2 style="margin-bottom:8px">اختر مرحلتك الدراسية</h2><p style="color:var(--muted);margin-bottom:20px">لبدء اللعب، اختر مرحلتك:</p><select id="stageDropdown" onchange="selectStage(this.value)" style="width:100%;padding:12px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--text);font-size:16px"><option value="">-- اختر مرحلة --</option>' +
-        stages.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('') +
-        '</select></div>';
+      gateC.innerHTML = '<div style="max-width:900px;margin:40px auto;text-align:center"><div style="font-size:56px;margin-bottom:12px">📚</div><h2 style="margin-bottom:8px">اختر مرحلتك الدراسية</h2><p style="color:var(--muted);margin-bottom:20px">لبدء اللعب، اختر مرحلتك:</p><div class="stage-cards">' +
+        stages.map(s=>'<div class="stagecard" onclick="selectStage(\''+s.id+'\')"><div class="ico">🎓</div><h3>'+s.name+'</h3></div>').join('') +
+        '</div></div>';
     }
     return;
   }
@@ -1041,9 +1053,9 @@ function renderStageSelector(){
   if(gate) gate.classList.remove('active');
   if(menu) menu.classList.add('active');
   if(sel){
-    sel.innerHTML = '<div class="panel" style="margin-bottom:12px"><h3 style="margin-bottom:8px">📚 المرحلة: <span style="color:var(--accent)">'+(stages.find(s=>s.id===activeId)||{}).name+'</span></h3><select onchange="selectStage(this.value)" style="width:100%;padding:8px;border-radius:8px;border:2px solid var(--border);background:var(--bg);color:var(--text)">' +
-      stages.map(s=>'<option value="'+s.id+'" '+(s.id===activeId?'selected':'')+'>'+s.name+'</option>').join('') +
-      '</select></div>';
+    sel.innerHTML = '<div class="panel" style="margin-bottom:12px"><h3 style="margin-bottom:10px">📚 اختر مرحلتك الدراسية</h3><div class="stage-cards">' +
+      stages.map(s=>'<div class="stagecard '+(s.id===activeId?'active':'')+'" onclick="selectStage(\''+s.id+'\')"><div class="ico">🎓</div><h3>'+s.name+'</h3>'+(s.id===activeId?'<span class="tag">الحالية</span>':'')+'</div>').join('') +
+      '</div></div>';
   }
 }
 function selectStage(id){
