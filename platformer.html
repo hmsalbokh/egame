@@ -8,7 +8,7 @@
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:#0f172a;color:#f1f5f9;font-family:'Segoe UI',Tahoma,Arial,sans-serif;overflow:hidden;height:100vh;height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
-  #game{border:2px solid #334155;border-radius:12px;box-shadow:0 0 40px rgba(34,211,238,.2);max-width:100vw;max-height:100vh}
+  #game{border:2px solid #334155;border-radius:12px;box-shadow:0 0 40px rgba(34,211,238,.2);max-width:100vw;max-height:100vh;width:100vw;height:100vh;height:100dvh;display:flex;align-items:center;justify-content:center;overflow:hidden}
   .hud{position:fixed;top:calc(8px + env(safe-area-inset-top));left:8px;right:8px;display:flex;flex-wrap:wrap;gap:4px;justify-content:space-between;pointer-events:none;z-index:10;font-size:12px;font-weight:700}
   .hud span{background:rgba(30,41,59,.88);border:1px solid #334155;border-radius:8px;padding:3px 8px;margin:0;font-size:12px;white-space:nowrap}
   @media (min-width:480px){ .hud{font-size:14px} .hud span{font-size:14px;padding:4px 10px} }
@@ -1010,8 +1010,11 @@ function showBossFight(questions, playerHP, bossHP, onResult, maxPlayerHP){
 // GAME START
 // ============================================================
 const isMobileDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const isPortraitNow = window.innerHeight > window.innerWidth;
+const mobilePortrait = isMobileDevice && isPortraitNow;
 const gameWidth = isMobileDevice ? 640 : 960;
 const gameHeight = isMobileDevice ? 360 : 540;
+const scaleMode = mobilePortrait ? Phaser.Scale.ENVELOP : Phaser.Scale.FIT;
 const config = {
   type: Phaser.AUTO,
   width: gameWidth,
@@ -1020,7 +1023,7 @@ const config = {
   backgroundColor: '#0f172a',
   physics: { default:'arcade', arcade:{ gravity:{y:900}, debug:false } },
   scene: [MenuScene, GameScene],
-  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+  scale: { mode: scaleMode, autoCenter: Phaser.Scale.CENTER_BOTH }
 };
 const game = new Phaser.Game(config);
 window.game = game;
@@ -1030,23 +1033,24 @@ window.game = game;
 // ============================================================
 function isMobile(){ return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); }
 function isPortrait(){ return window.innerHeight > window.innerWidth; }
+let lastOrientation = isPortrait();
 function updateOrientationPrompt(){
-  const rp = document.getElementById('rotatePrompt');
-  if(!rp) return;
-  const mobile = isMobile();
-  const portrait = isPortrait();
-  if(mobile && portrait){
-    rp.classList.add('show');
-    const tc = document.getElementById('touchControls'); if(tc) tc.style.display='none';
-  } else {
-    rp.classList.remove('show');
-    const tc = document.getElementById('touchControls');
-    const hud = document.getElementById('hud');
-    if(tc && mobile && hud && hud.style.display !== 'none' && !portrait){
-      tc.style.display='flex';
-    } else if(tc && (!mobile || (hud && hud.style.display === 'none'))){
-      tc.style.display='none';
-    }
+  // In portrait on mobile, the game uses ENVELOP (zoomed, camera follows player).
+  // Reload on orientation change so scale mode updates cleanly.
+  const nowPortrait = isPortrait();
+  if (isMobile() && nowPortrait !== lastOrientation) {
+    lastOrientation = nowPortrait;
+    // preserve progress (in localStorage) - just reload
+    location.reload();
+    return;
+  }
+  lastOrientation = nowPortrait;
+  const tc = document.getElementById('touchControls');
+  const hud = document.getElementById('hud');
+  if(tc && isMobile() && hud && hud.style.display !== 'none'){
+    tc.style.display='flex';
+  } else if(tc && (!isMobile() || (hud && hud.style.display === 'none'))){
+    tc.style.display='none';
   }
   if(window.game && window.game.scale){ try{ window.game.scale.refresh(); }catch(e){} }
 }
